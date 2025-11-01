@@ -5,6 +5,18 @@ import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Plane, Hotel, FileText, Calendar, MapPin, Star, Quote, CheckCircle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { useEffect, useState } from 'react';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../../../../firebase';
+
+
+interface Destination {
+  id: string;
+  name: string;
+  image: string;
+  rating: number;
+  region?: string;
+}
 
 interface HomePageProps {
   onNavigate: (page: string) => void;
@@ -37,27 +49,24 @@ export function HomePage({ onNavigate }: HomePageProps) {
       page: 'services'
     }
   ];
-
-  const featuredDestinations = [
-    {
-      id: 1,
-      name: 'Paris, France',
-      image: 'https://images.unsplash.com/photo-1431274172761-fca41d930114?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXJpcyUyMGVpZmZlbCUyMHRvd2VyfGVufDF8fHx8MTc2MTQyMjQwMHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      rating: 4.9
-    },
-    {
-      id: 2,
-      name: 'Dubai, UAE',
-      image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkdWJhaSUyMHNreWxpbmV8ZW58MXx8fHwxNzYxNDE5OTI5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      rating: 4.8
-    },
-    {
-      id: 3,
-      name: 'Bali, Indonesia',
-      image: 'https://images.unsplash.com/photo-1704253411612-e4deb715dcd8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWxpJTIwdGVtcGxlfGVufDF8fHx8MTc2MTQ3OTc4Nnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      rating: 4.9
-    }
-  ];
+ const [featuredDestinations, setFeaturedDestinations] = useState<Destination[]>([]);
+ const [loading, setLoading] = useState(true);
+ 
+useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const q = query(collection(db, 'destinations'), where('featured', '==', true));
+        const snapshot = await getDocs(q);
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Destination[];
+        setFeaturedDestinations(data);
+      } catch (err) {
+        console.error('Error fetching featured destinations:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFeatured();
+  }, []);
 
   const testimonials = [
     {
@@ -196,6 +205,12 @@ export function HomePage({ onNavigate }: HomePageProps) {
             </p>
           </div>
 
+
+          {loading ? (
+            <p className="text-center text-[var(--muted-foreground)]">Loading featured destinations...</p>
+          ) : featuredDestinations.length === 0 ? (
+            <p className="text-center text-[var(--muted-foreground)]">No featured destinations found.</p>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {featuredDestinations.map((destination) => (
               <Card 
@@ -226,7 +241,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
               </Card>
             ))}
           </div>
-
+          )}
           <div className="text-center mt-12">
             <Button 
               onClick={() => onNavigate('destinations')}

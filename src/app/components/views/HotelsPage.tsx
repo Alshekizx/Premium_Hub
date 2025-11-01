@@ -1,3 +1,4 @@
+"use client";
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
@@ -6,87 +7,17 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { MapPin, Star, Wifi, Coffee, Utensils, Dumbbell, Car, Search,  LucideIcon  } from 'lucide-react';
-import { useState } from 'react';
 import { HeroSection } from '../heroSection';
+import { useEffect, useState } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../../../firebase'; 
+import { HotelItem } from './admin';
 
 interface HotelsPageProps {
   onNavigate: (page: string) => void;
 }
 
-const hotels = [
-  {
-    id: 1,
-    name: 'Le Grand Paris Hotel',
-    location: 'Paris, France',
-    image: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBob3RlbCUyMGxvYmJ5fGVufDF8fHx8MTc2MTQ2MzAwM3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    price: '$259',
-    rating: 4.9,
-    reviews: 324,
-    category: 'Luxury',
-    amenities: ['Wifi', 'Restaurant', 'Gym', 'Parking'],
-    description: 'Elegant 5-star hotel in the heart of Paris with stunning city views'
-  },
-  {
-    id: 2,
-    name: 'Bali Beach Resort',
-    location: 'Seminyak, Bali',
-    image: 'https://images.unsplash.com/photo-1702743599501-a821d0b38b66?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cm9waWNhbCUyMGJlYWNoJTIwcGFyYWRpc2V8ZW58MXx8fHwxNzYxNDc2OTUxfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    price: '$189',
-    rating: 4.8,
-    reviews: 256,
-    category: 'Beach',
-    amenities: ['Wifi', 'Restaurant', 'Beach Access', 'Spa'],
-    description: 'Beachfront paradise with infinity pool and spa facilities'
-  },
-  {
-    id: 3,
-    name: 'Tokyo Business Hotel',
-    location: 'Shibuya, Tokyo',
-    image: 'https://images.unsplash.com/photo-1645343709881-465be60137a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0b2t5byUyMGNpdHklMjBuaWdodHxlbnwxfHx8fDE3NjE0OTY0MzN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    price: '$179',
-    rating: 4.7,
-    reviews: 189,
-    category: 'Business',
-    amenities: ['Wifi', 'Business Center', 'Gym', 'Restaurant'],
-    description: 'Modern hotel perfect for business travelers in central Tokyo'
-  },
-  {
-    id: 4,
-    name: 'Santorini Luxury Suites',
-    location: 'Oia, Santorini',
-    image: 'https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYW50b3JpbmklMjBncmVlY2V8ZW58MXx8fHwxNzYxNDE2NzMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    price: '$399',
-    rating: 5.0,
-    reviews: 412,
-    category: 'Luxury',
-    amenities: ['Wifi', 'Pool', 'Restaurant', 'Spa'],
-    description: 'Exclusive suites with breathtaking caldera views and infinity pools'
-  },
-  {
-    id: 5,
-    name: 'Dubai Marina Tower Hotel',
-    location: 'Dubai Marina, UAE',
-    image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkdWJhaSUyMHNreWxpbmV8ZW58MXx8fHwxNzYxNDE5OTI5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    price: '$299',
-    rating: 4.9,
-    reviews: 567,
-    category: 'Luxury',
-    amenities: ['Wifi', 'Pool', 'Gym', 'Restaurant', 'Spa'],
-    description: 'Ultra-modern hotel with stunning marina and skyline views'
-  },
-  {
-    id: 6,
-    name: 'Paris Budget Inn',
-    location: 'Montmartre, Paris',
-    image: 'https://images.unsplash.com/photo-1431274172761-fca41d930114?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXJpcyUyMGVpZmZlbCUyMHRvd2VyfGVufDF8fHx8MTc2MTQyMjQwMHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    price: '$89',
-    rating: 4.5,
-    reviews: 143,
-    category: 'Budget',
-    amenities: ['Wifi', 'Breakfast'],
-    description: 'Cozy and affordable accommodation in charming Montmartre'
-  }
-];
+
 
 const amenityIcons: Record<string, LucideIcon> = {
   Wifi,
@@ -106,6 +37,25 @@ export function HotelsPage({ onNavigate }: HotelsPageProps) {
   const [checkOut, setCheckOut] = useState('');
   const [guests, setGuests] = useState('2');
   const [category, setCategory] = useState('all');
+  const [hotels, setHotels] = useState<HotelItem[]>([]);
+  const [, setLoading] = useState(true);
+
+   // ✅ Fetch hotels from Firestore
+  useEffect(() => {
+    const fetchHotels = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, 'hotels'));
+        const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as HotelItem[];
+        setHotels(data);
+      } catch (error) {
+        console.error('Error fetching hotels:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHotels();
+  }, []);
 
   const filteredHotels = hotels.filter(hotel => {
     const matchesCategory = category === 'all' || hotel.category === category;

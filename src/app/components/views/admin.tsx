@@ -130,7 +130,7 @@ interface Destination {
   featured: boolean;
 }
 
-interface HotelItem {
+export interface HotelItem {
   id: string;
   name: string;
   location: string;
@@ -143,7 +143,7 @@ interface HotelItem {
   amenities:string[];
 }
 
-interface VisaDestination {
+export interface VisaDestination {
   id: string;
   country: string;
   flag: string;
@@ -191,65 +191,9 @@ const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
 
-  // Content Management State
-  const [destinations, setDestinations] = useState<Destination[]>([
-    {
-      id: '1',
-      name: 'Paris, France',
-      region: 'Asia',
-      image: 'https://images.unsplash.com/photo-1704253411612-e4deb715dcd8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWxpJTIwdGVtcGxlfGVufDF8fHx8MTc2MTQ3OTc4Nnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      rating: 4.8,
-      description: 'Tropical paradise with stunning temples and beautiful beaches',
-      category: 'Beach',
-      includes: ['Flights', 'Hotels', 'Breakfast'],
-      featured: true,
-    },
-    {
-      id: '2',
-      name: 'Tokyo, Japan',
-      region: 'Europe',
-      image: 'https://images.unsplash.com/photo-1431274172761-fca41d930114?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXJpcyUyMGVpZmZlbCUyMHRvd2VyfGVufDF8fHx8MTc2MTQyMjQwMHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      rating: 4.9,
-      description: 'Explore the City of Light, from the Eiffel Tower to charming cafés',
-      category: 'Cultural',
-      includes: ['Flights', 'Hotels', 'Tours'],
-      featured: true,
-    }
-  ]);
-
-  const [hotels, setHotels] = useState<HotelItem[]>([
-    {
-    id: '1',
-    name: 'Le Grand Paris Hotel',
-    location: 'Paris, France',
-    image: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBob3RlbCUyMGxvYmJ5fGVufDF8fHx8MTc2MTQ2MzAwM3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    price: '$259',
-    rating: 4.9,
-    reviews: 324,
-    category: 'Luxury',
-    amenities: ['Wifi', 'Restaurant', 'Gym', 'Parking'],
-    description: 'Elegant 5-star hotel in the heart of Paris with stunning city views'
-  },
-  ]);
-
-  const [visaDestinations, setVisaDestinations] = useState<VisaDestination[]>([
-    {
-      id: '1',
-      country: 'United States',
-      flag: '🇺🇸',
-      types: ['Tourist', 'Business', 'Student'],
-      processingTime: '7-14 days',
-      successRate: '92%'
-    },
-    {
-      id: '2',
-      country: 'United Kingdom',
-      flag: '🇬🇧',
-      types: ['Tourist', 'Business', 'Student', 'Work'],
-      processingTime: '10-15 days',
-      successRate: '89%'
-    }
-  ]);
+const [destinations, setDestinations] = useState<Destination[]>([]);
+const [hotels, setHotels] = useState<HotelItem[]>([]);
+const [visaDestinations, setVisaDestinations] = useState<VisaDestination[]>([]);
 
 const [faqs, setFaqs] = useState<FAQ[]>([
   {
@@ -500,53 +444,67 @@ const deleteContact = async (id: string) => {
   }
 };
 
-const addDestination = () => {
+const addDestination = async () => {
   if (!newDestination.name || !newDestination.description) {
     toast.error('Please fill in all required fields');
     return;
   }
 
-  let updated: Destination[];
+  try {
+    let updated: Destination[];
 
-  if (editingId) {
-    updated = destinations.map((d) =>
-      d.id === editingId ? { ...d, ...newDestination, id: editingId } : d
-    );
-    toast.success('Destination updated successfully!');
-    setEditingId(null);
-  } else {
-    // ✅ Use crypto.randomUUID() instead of Date.now()
-    const destination: Destination = {
-      id: crypto.randomUUID(),
-      ...newDestination,
-    };
-    updated = [...destinations, destination];
-    toast.success('Destination added successfully!');
+    if (editingId) {
+      // ✏️ Update existing destination
+      const updatedDestination = { ...newDestination, id: editingId };
+      await setDoc(doc(db, "destinations", editingId), updatedDestination);
+      updated = destinations.map(d => d.id === editingId ? updatedDestination : d);
+      toast.success("Destination updated successfully!");
+      setEditingId(null);
+    } else {
+      // ➕ Add new destination
+      const id = crypto.randomUUID();
+      const destination: Destination = { id, ...newDestination };
+      await setDoc(doc(db, "destinations", id), destination);
+      updated = [...destinations, destination];
+      toast.success("Destination added successfully!");
+    }
+
+    setDestinations(updated);
+    localStorage.setItem("destinations", JSON.stringify(updated));
+
+    // Reset
+    setNewDestination({
+      name: "",
+      region: "",
+      image: "",
+      rating: 5,
+      description: "",
+      category: "",
+      includes: [],
+      featured: false,
+    });
+  } catch (error) {
+    console.error("Error adding/updating destination:", error);
+    toast.error("Error saving destination");
   }
-
-  setDestinations(updated);
-  localStorage.setItem('destinations', JSON.stringify(updated));
-
-  setNewDestination({
-    name: '',
-    region: '',
-    image: '',
-    rating: 5,
-    description: '',
-    category: '',
-    includes: [],
-    featured: false,
-  });
 };
 
 
 
-  const deleteDestination = (id: string) => {
+
+const deleteDestination = async (id: string) => {
+  try {
+    await deleteDoc(doc(db, "destinations", id));
     const updated = destinations.filter(d => d.id !== id);
     setDestinations(updated);
-    localStorage.setItem('destinations', JSON.stringify(updated));
-    toast.success('Destination deleted');
-  };
+    localStorage.setItem("destinations", JSON.stringify(updated));
+    toast.success("Destination deleted");
+  } catch (error) {
+    console.error("Error deleting destination:", error);
+    toast.error("Error deleting destination");
+  }
+};
+
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const editDestination = (dest: Destination) => {
@@ -564,50 +522,65 @@ const addDestination = () => {
   toast.info(`Editing ${dest.name}`);
 };
 
+const fetchDestinations = async () => {
+  try {
+    const q = query(collection(db, "destinations"), orderBy("name"));
+    const snapshot = await getDocs(q);
+    const list: Destination[] = snapshot.docs.map(doc => doc.data() as Destination);
+    setDestinations(list);
+    localStorage.setItem("destinations", JSON.stringify(list));
+  } catch (error) {
+    console.error("Error fetching destinations:", error);
+  }
+};
 
-  const [editingHotelId, setEditingHotelId] = useState<string | null>(null);
 
-const addHotel = () => {
+
+const [editingHotelId, setEditingHotelId] = useState<string | null>(null);
+
+const addHotel = async () => {
   if (!newHotel.name || !newHotel.location) {
     toast.error('Please fill in all required fields');
     return;
   }
 
-  let updated: HotelItem[];
+  try {
+    let updated: HotelItem[];
 
-  if (editingHotelId) {
-    // ✏️ Update existing hotel
-    updated = hotels.map((h) =>
-      h.id === editingHotelId ? { ...h, ...newHotel, id: editingHotelId } : h
-    );
-    toast.success('Hotel updated successfully!');
-    setEditingHotelId(null);
-  } else {
-    // ➕ Add new hotel
-    const hotel: HotelItem = {
-      id: Date.now().toString(),
-      ...newHotel,
-    };
-    updated = [...hotels, hotel];
-    toast.success('Hotel added successfully!');
+    if (editingHotelId) {
+      const updatedHotel = { ...newHotel, id: editingHotelId };
+      await setDoc(doc(db, "hotels", editingHotelId), updatedHotel);
+      updated = hotels.map(h => h.id === editingHotelId ? updatedHotel : h);
+      toast.success("Hotel updated successfully!");
+      setEditingHotelId(null);
+    } else {
+      const id = crypto.randomUUID();
+      const hotel: HotelItem = { id, ...newHotel };
+      await setDoc(doc(db, "hotels", id), hotel);
+      updated = [...hotels, hotel];
+      toast.success("Hotel added successfully!");
+    }
+
+    setHotels(updated);
+    localStorage.setItem("hotels", JSON.stringify(updated));
+
+    setNewHotel({
+      name: "",
+      location: "",
+      image: "",
+      price: "",
+      rating: 5,
+      reviews: 0,
+      category: "",
+      amenities: [],
+      description: "",
+    });
+  } catch (error) {
+    console.error("Error saving hotel:", error);
+    toast.error("Error saving hotel");
   }
-
-  setHotels(updated);
-  localStorage.setItem('hotels', JSON.stringify(updated));
-
-  // Reset form fields
-  setNewHotel({
-    name: '',
-    location: '',
-    image: '',
-    price: '',
-    rating: 5,
-    reviews: 0,
-    category: '',
-    amenities: [],
-    description: '',
-  });
 };
+
 
 const editHotel = (hotel: HotelItem) => {
   setNewHotel({
@@ -626,64 +599,112 @@ const editHotel = (hotel: HotelItem) => {
 };
 
 
-  const deleteHotel = (id: string) => {
+const deleteHotel = async (id: string) => {
+  try {
+    await deleteDoc(doc(db, "hotels", id));
     const updated = hotels.filter(h => h.id !== id);
     setHotels(updated);
-    localStorage.setItem('hotels', JSON.stringify(updated));
-    toast.success('Hotel deleted');
-  };
+    localStorage.setItem("hotels", JSON.stringify(updated));
+    toast.success("Hotel deleted");
+  } catch (error) {
+    console.error("Error deleting hotel:", error);
+    toast.error("Error deleting hotel");
+  }
+};
+const fetchHotels = async () => {
+  try {
+    const q = query(collection(db, "hotels"), orderBy("name"));
+    const snapshot = await getDocs(q);
+    const list: HotelItem[] = snapshot.docs.map(doc => doc.data() as HotelItem);
+    setHotels(list);
+    localStorage.setItem("hotels", JSON.stringify(list));
+  } catch (error) {
+    console.error("Error fetching hotels:", error);
+  }
+};
 
-const addVisaDestination = () => {
+
+const addVisaDestination = async () => {
   if (!newVisaDestination.country || !newVisaDestination.flag) {
     toast.error('Please fill in all required fields');
     return;
   }
 
-  let updatedList;
+  try {
+    let updatedList;
 
-  // ✅ If editing existing destination
-  if (newVisaDestination.id) {
-    updatedList = visaDestinations.map((visa) =>
-      visa.id === newVisaDestination.id ? newVisaDestination : visa
-    );
-    toast.success('Visa destination updated successfully!');
-  } 
-  // ✅ If adding new one
-  else {
-    const visaDest: VisaDestination = {
-      ...newVisaDestination,
-      id: Date.now().toString(),
-    };
-    updatedList = [...visaDestinations, visaDest];
-    toast.success('Visa destination added successfully!');
+    if (newVisaDestination.id) {
+      await setDoc(doc(db, "visaDestinations", newVisaDestination.id), newVisaDestination);
+      updatedList = visaDestinations.map(v => v.id === newVisaDestination.id ? newVisaDestination : v);
+      toast.success("Visa destination updated successfully!");
+    } else {
+      const id = crypto.randomUUID();
+      const visaDest: VisaDestination = { ...newVisaDestination, id };
+      await setDoc(doc(db, "visaDestinations", id), visaDest);
+      updatedList = [...visaDestinations, visaDest];
+      toast.success("Visa destination added successfully!");
+    }
+
+    setVisaDestinations(updatedList);
+    localStorage.setItem("visa_destinations", JSON.stringify(updatedList));
+
+    setNewVisaDestination({
+      id: '',
+      country: '',
+      flag: '',
+      processingTime: '',
+      types: [],
+      successRate: '',
+    });
+  } catch (error) {
+    console.error("Error saving visa destination:", error);
+    toast.error("Error saving visa destination");
   }
-
-  // ✅ Save
-  setVisaDestinations(updatedList);
-  localStorage.setItem('visa_destinations', JSON.stringify(updatedList));
-
-  // ✅ Reset form
-  setNewVisaDestination({
-    id: '',
-    country: '',
-    flag: '',
-    processingTime: '',
-    types: [],
-    successRate: '',
-  });
 };
+
 const editVisaDestination = (visa: VisaDestination) => {
   setNewVisaDestination(visa);
   toast.info(`Editing ${visa.country}`);
 };
 
 
-  const deleteVisaDestination = (id: string) => {
+const deleteVisaDestination = async (id: string) => {
+  try {
+    await deleteDoc(doc(db, "visaDestinations", id));
     const updated = visaDestinations.filter(v => v.id !== id);
     setVisaDestinations(updated);
-    localStorage.setItem('visa_destinations', JSON.stringify(updated));
-    toast.success('Visa destination deleted');
+    localStorage.setItem("visa_destinations", JSON.stringify(updated));
+    toast.success("Visa destination deleted");
+  } catch (error) {
+    console.error("Error deleting visa destination:", error);
+    toast.error("Error deleting visa destination");
+  }
+};
+const fetchVisaDestinations = async () => {
+  try {
+    const q = query(collection(db, "visaDestinations"), orderBy("country"));
+    const snapshot = await getDocs(q);
+    const list: VisaDestination[] = snapshot.docs.map(doc => doc.data() as VisaDestination);
+    setVisaDestinations(list);
+    localStorage.setItem("visa_destinations", JSON.stringify(list));
+  } catch (error) {
+    console.error("Error fetching visa destinations:", error);
+  }
+};
+
+useEffect(() => {
+  const fetchAllData = async () => {
+    await Promise.all([
+      fetchDestinations(),
+      fetchHotels(),
+      fetchVisaDestinations()
+    ]);
   };
+
+  fetchAllData();
+}, []);
+
+
 
 const [testimonials, setTestimonials] = useState<Testimonial[]>(() => {
   if (typeof window !== "undefined") {

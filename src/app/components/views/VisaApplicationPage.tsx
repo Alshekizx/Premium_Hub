@@ -1,9 +1,14 @@
+"use client";
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { FileText, Clock, CheckCircle, Globe, Shield, Users } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from '../../../../firebase';
+import { VisaDestination } from './admin';
 
 interface VisaApplicationPageProps {
   onNavigate: (page: string) => void;
@@ -45,50 +50,30 @@ export function VisaApplicationPage({ onNavigate }: VisaApplicationPageProps) {
     }
   ];
 
-  const popularDestinations = [
-    {
-      country: 'United States',
-      flag: '🇺🇸',
-      types: ['Tourist', 'Business', 'Student'],
-      processing: '7-14 days',
-      success: '92%'
-    },
-    {
-      country: 'United Kingdom',
-      flag: '🇬🇧',
-      types: ['Tourist', 'Business', 'Student', 'Work'],
-      processing: '10-15 days',
-      success: '89%'
-    },
-    {
-      country: 'Canada',
-      flag: '🇨🇦',
-      types: ['Tourist', 'Business', 'Student', 'Work'],
-      processing: '5-10 days',
-      success: '94%'
-    },
-    {
-      country: 'Schengen (Europe)',
-      flag: '🇪🇺',
-      types: ['Tourist', 'Business'],
-      processing: '10-15 days',
-      success: '91%'
-    },
-    {
-      country: 'Australia',
-      flag: '🇦🇺',
-      types: ['Tourist', 'Business', 'Student', 'Work'],
-      processing: '7-14 days',
-      success: '88%'
-    },
-    {
-      country: 'Dubai (UAE)',
-      flag: '🇦🇪',
-      types: ['Tourist', 'Business'],
-      processing: '3-5 days',
-      success: '96%'
+ const [popularDestinations, setPopularDestinations] = useState<VisaDestination[]>([]);
+  const [, setLoading] = useState(true);
+ // Fetch destinations from Firestore
+useEffect(() => {
+  const fetchDestinations = async () => {
+    setLoading(true);
+    try {
+      const querySnapshot = await getDocs(collection(db, "visaDestinations"));
+      const data = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as VisaDestination[];
+      setPopularDestinations(data);
+    } catch (error) {
+      console.error("Error fetching visa destinations:", error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  fetchDestinations();
+}, []);
+
+
 
   const applicationProcess = [
     {
@@ -273,11 +258,11 @@ export function VisaApplicationPage({ onNavigate }: VisaApplicationPageProps) {
                 <span className="text-4xl">{dest.flag}</span>
                 <div>
                   <h3 className="text-xl text-[var(--foreground)]">{dest.country}</h3>
-                  <p className="text-sm text-[var(--muted-foreground)]">{dest.processing}</p>
+                  <p className="text-sm text-[var(--muted-foreground)]">{dest.processingTime}</p>
                 </div>
               </div>
               <Badge className="bg-[var(--muted)] text-[var(--foreground)] border-[var(--border)]">
-                {dest.success} success
+                {dest.successRate} success
               </Badge>
             </div>
             <div className="flex flex-wrap gap-2">
