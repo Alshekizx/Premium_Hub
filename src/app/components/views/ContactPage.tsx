@@ -5,28 +5,75 @@ import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Mail, Phone, MapPin, Clock, MessageSquare, Send } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import * as countryCodes from 'country-codes-list';
+import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
+import { db } from '../../../../firebase';
+import { CompanyInfo } from './admin';
 
 interface ContactPageProps {
   onNavigate: (page: string) => void;
 }
 
 export function ContactPage({ onNavigate }: ContactPageProps) {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    subject: '',
-    inquiry: '',
-    message: ''
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast.success('Thank you for your inquiry! Our team will get back to you within 24 hours.');
-    setFormData({ name: '', email: '', phone: '', subject: '', inquiry: '', message: '' });
+ const [formData, setFormData] = useState({
+  name: '',
+  email: '',
+  phone: '',
+  countryCode: '', // default to USA or any preferred code
+  subject: '',
+  inquiry: '',
+  message: ''
+});
+const countryList = Object.values(countryCodes.customList('countryCode', '{countryCode} +{countryCallingCode}'));
+const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
+useEffect(() => {
+  const fetchCompanyInfo = async () => {
+    try {
+      const docRef = doc(db, "companyInfo", "main");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setCompanyInfo(docSnap.data() as CompanyInfo);
+      } else {
+        console.warn("No company info found in Firestore.");
+      }
+    } catch (error) {
+      console.error("Error fetching company info:", error);
+    }
   };
+
+  fetchCompanyInfo();
+}, []);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  try {
+    // Save to Firestore
+    await addDoc(collection(db, "contactMessages"), {
+      ...formData,
+      createdAt: serverTimestamp(),
+    });
+
+    // Show success toast
+    toast.success('Thank you for your inquiry! Our team will get back to you within 24 hours.');
+
+    // Reset form
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      countryCode: '',
+      subject: '',
+      inquiry: '',
+      message: ''
+    });
+  } catch (error) {
+    console.error("Error submitting contact form:", error);
+    toast.error("Failed to submit your message. Please try again.");
+  }
+};
+
 
   return (
     <div className="pt-16">
@@ -40,30 +87,31 @@ export function ContactPage({ onNavigate }: ContactPageProps) {
         </div>
       </section>
 
-      {/* Contact Info Cards */}
-      <section className="py-12 bg-[var(--background)]">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl mx-auto -mt-24 relative z-10">
-            {[
+    {/* Contact Info Cards */}
+    <section className="py-12 bg-[var(--background)]">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl mx-auto -mt-24 relative z-10">
+          {companyInfo ? (
+            [
               {
                 icon: <Phone className="h-7 w-7 text-[var(--primary)]" />,
                 title: "Phone",
-                lines: ["+1 (555) MAJIK-00", "+1 (555) 624-4500"],
+                lines: companyInfo.phones,
               },
               {
                 icon: <Mail className="h-7 w-7 text-[var(--primary)]" />,
                 title: "Email",
-                lines: ["info@majiktravels.com", "support@majiktravels.com"],
+                lines: companyInfo.emails,
               },
               {
                 icon: <MapPin className="h-7 w-7 text-[var(--primary)]" />,
                 title: "Office",
-                lines: ["123 Travel Plaza", "New York, NY 10001"],
+                lines: [companyInfo.address],
               },
               {
                 icon: <Clock className="h-7 w-7 text-[var(--primary)]" />,
                 title: "Hours",
-                lines: ["Mon-Fri: 9AM - 6PM", "Sat-Sun: 10AM - 4PM"],
+                lines: [companyInfo.workHours],
               },
             ].map((info, i) => (
               <Card key={i} className="shadow-xl bg-[var(--card)] border border-[var(--border)] hover:shadow-2xl transition-all">
@@ -77,10 +125,14 @@ export function ContactPage({ onNavigate }: ContactPageProps) {
                   ))}
                 </CardContent>
               </Card>
-            ))}
-          </div>
+            ))
+          ) : (
+            <p className="text-center col-span-4 text-gray-500">Loading company info...</p>
+          )}
         </div>
-      </section>
+      </div>
+    </section>
+
 
 
       {/* Contact Form Section */}
@@ -128,17 +180,42 @@ export function ContactPage({ onNavigate }: ContactPageProps) {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
+                     <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number *</Label>
+                      <div className="flex gap-2">
+                        <Select
+                          value={formData.countryCode} // 👈 Don't fallback here
+                          onValueChange={(value) => setFormData({ ...formData, countryCode: value })}
+                        >
+                          <SelectTrigger className="w-[100px] bg-[var(--input-background)] text-[var(--foreground)]">
+                            <SelectValue placeholder="+234" /> {/* 👈 Will now show when no selection yet */}
+                          </SelectTrigger>
+
+                          <SelectContent className="max-h-[300px] overflow-y-auto">
+                            {[...new Set(countryList)].map((item, index) => {
+                              const [ code] = item.split(' ');
+                              return (
+                                <SelectItem key={`${code}-${index}`} value={code}>
+                                  {item}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+
+
                         <Input
                           id="phone"
                           type="tel"
-                          placeholder="+1 (555) 000-0000"
+                          placeholder="808 123 4567"
                           value={formData.phone}
                           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          className="bg-[var(--input-background)] text-[var(--foreground)]"
+                          required
+                          className="flex-1 bg-[var(--input-background)] text-[var(--foreground)]"
                         />
                       </div>
+                    </div>
+
                       <div className="space-y-2">
                         <Label htmlFor="inquiry">Inquiry Type *</Label>
                         <Select
@@ -222,6 +299,7 @@ export function ContactPage({ onNavigate }: ContactPageProps) {
                 </CardContent>
               </Card>
 
+              {/* 24/7 Emergency Support */}
               <Card className="bg-[var(--card)] border border-[var(--border)]">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -235,11 +313,15 @@ export function ContactPage({ onNavigate }: ContactPageProps) {
                   </p>
                   <div className="bg-[var(--muted)] p-4 rounded-lg">
                     <p className="text-[var(--primary-foreground)]">Emergency Hotline:</p>
-                    <p className="text-2xl text-[var(--primary)]">+1 (555) 911-HELP</p>
+                    <p className="text-2xl text-[var(--primary)]">
+                      {companyInfo?.phones[0] || "+1 (555) 911-HELP"}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
 
+
+              {/* Visit Our Office */}
               <Card className="bg-[var(--card)] border border-[var(--border)]">
                 <CardHeader>
                   <CardTitle>Visit Our Office</CardTitle>
@@ -252,15 +334,13 @@ export function ContactPage({ onNavigate }: ContactPageProps) {
                     <div className="flex items-start gap-3">
                       <MapPin className="h-5 w-5 text-[var(--primary)] flex-shrink-0 mt-0.5" />
                       <div>
-                        <p>123 Travel Plaza, Suite 500</p>
-                        <p>New York, NY 10001</p>
+                        <p>{companyInfo?.address || "123 Travel Plaza, Suite 500"}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <Clock className="h-5 w-5 text-[var(--primary)] flex-shrink-0 mt-0.5" />
                       <div>
-                        <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
-                        <p>Saturday - Sunday: 10:00 AM - 4:00 PM</p>
+                        <p>{companyInfo?.workHours || "Monday - Friday: 9:00 AM - 6:00 PM"}</p>
                       </div>
                     </div>
                   </div>
@@ -274,6 +354,7 @@ export function ContactPage({ onNavigate }: ContactPageProps) {
                   </Button>
                 </CardContent>
               </Card>
+
 
               <Card className="bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-[var(--primary-foreground)]">
                 <CardHeader>

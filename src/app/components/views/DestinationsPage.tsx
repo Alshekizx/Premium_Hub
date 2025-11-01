@@ -18,7 +18,6 @@ const destinations = [
     name: 'Paris, France',
     region: 'Europe',
     image: 'https://images.unsplash.com/photo-1431274172761-fca41d930114?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXJpcyUyMGVpZmZlbCUyMHRvd2VyfGVufDF8fHx8MTc2MTQyMjQwMHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    duration: '7 Days',
     rating: 4.9,
     description: 'Explore the City of Light, from the Eiffel Tower to charming cafés',
     category: 'Cultural',
@@ -29,7 +28,6 @@ const destinations = [
     name: 'Bali, Indonesia',
     region: 'Asia',
     image: 'https://images.unsplash.com/photo-1704253411612-e4deb715dcd8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWxpJTIwdGVtcGxlfGVufDF8fHx8MTc2MTQ3OTc4Nnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    duration: '5 Days',
     rating: 4.8,
     description: 'Tropical paradise with stunning temples and beautiful beaches',
     category: 'Beach',
@@ -40,7 +38,6 @@ const destinations = [
     name: 'Tokyo, Japan',
     region: 'Asia',
     image: 'https://images.unsplash.com/photo-1645343709881-465be60137a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0b2t5byUyMGNpdHklMjBuaWdodHxlbnwxfHx8fDE3NjE0OTY0MzN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    duration: '8 Days',
     rating: 4.9,
     description: 'Where ancient traditions meet cutting-edge technology',
     category: 'Cultural',
@@ -51,7 +48,6 @@ const destinations = [
     name: 'Santorini, Greece',
     region: 'Europe',
     image: 'https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYW50b3JpbmklMjBncmVlY2V8ZW58MXx8fHwxNzYxNDE2NzMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    duration: '6 Days',
     rating: 4.9,
     description: 'White-washed villages and breathtaking sunsets',
     category: 'Beach',
@@ -62,7 +58,6 @@ const destinations = [
     name: 'Dubai, UAE',
     region: 'Middle East',
     image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkdWJhaSUyMHNreWxpbmV8ZW58MXx8fHwxNzYxNDE5OTI5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    duration: '5 Days',
     rating: 4.8,
     description: 'Luxury shopping, ultramodern architecture and a lively nightlife',
     category: 'Luxury',
@@ -73,7 +68,6 @@ const destinations = [
     name: 'Maldives',
     region: 'Asia',
     image: 'https://images.unsplash.com/photo-1702743599501-a821d0b38b66?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cm9waWNhbCUyMGJlYWNoJTIwcGFyYWRpc2V8ZW58MXx8fHwxNzYxNDc2OTUxfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    duration: '7 Days',
     rating: 5.0,
     description: 'Ultimate island escape with crystal-clear waters',
     category: 'Beach',
@@ -165,9 +159,7 @@ export function DestinationsPage({ onNavigate }: DestinationsPageProps) {
                       alt={destination.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     />
-                    <Badge className="absolute top-4 right-4 bg-[var(--card)] text-[var(--foreground)] shadow">
-                      {destination.duration}
-                    </Badge>
+                    
                     <Badge className="absolute top-4 left-4 bg-[var(--primary)] text-[var(--primary-foreground)]">
                       {destination.category}
                     </Badge>

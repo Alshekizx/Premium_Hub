@@ -18,6 +18,9 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { db } from '../../../../firebase';
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { Booking, EventData, FlightData, HotelData, VisaData } from './admin';
 
 
 
@@ -25,55 +28,72 @@ export function BookNowPage() {
   const [activeTab, setActiveTab] = useState('flight');
 
   // Flight booking form
-  const [flightData, setFlightData] = useState({
-    tripType: 'roundtrip',
-    from: '',
-    to: '',
-    departure: '',
-    return: '',
-    passengers: '1',
-    class: 'economy',
-    email: '',
-    note: '',
-  });
+ const [flightData, setFlightData] = useState<FlightData>({
+  tripType: 'roundtrip', // ok, 'roundtrip' is allowed
+  from: '',
+  to: '',
+  departure: '',
+  return: '',
+  passengers: '1',
+  class: 'economy',      // ok, 'economy' is allowed
+  email: '',
+  note: '',
+});
 
-  // Visa application form
-  const [visaData, setVisaData] = useState({
-    country: '',
-    visaType: '',
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    travelDate: '',
-    note: '',
-  });
+const [visaData, setVisaData] = useState<VisaData>({
+  country: '',
+  visaType: '',
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  travelDate: '',
+  note: '',
+});
 
-  // Hotel booking form
-  const [hotelData, setHotelData] = useState({
-    destination: '',
-    checkIn: '',
-    checkOut: '',
-    rooms: '1',
-    guests: '2',
-    email: '',
-    note: '',
-  });
+const [hotelData, setHotelData] = useState<HotelData>({
+  destination: '',
+  checkIn: '',
+  checkOut: '',
+  rooms: '1',
+  guests: '2',
+  email: '',
+  note: '',
+});
 
-  // Event booking form
-  const [eventData, setEventData] = useState({
-    eventType: '',
-    location: '',
-    date: '',
-    guests: '',
-    duration: '',
-    requirements: '',
-    email: '',
-  });
+const [eventData, setEventData] = useState<EventData>({
+  eventType: '',
+  location: '',
+  date: '',
+  guests: '',
+  duration: '',
+  requirements: '',
+  email: '',
+});
 
-  const handleFlightSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast.success('Flight booking request submitted! Our team will contact you shortly with the best options.');
+
+
+const [, setBookings] = useState<Booking[]>([]);
+
+const handleFlightSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  try {
+    // Save to Firestore
+    const docRef = await addDoc(collection(db, "flightBookings"), {
+      ...flightData,
+      createdAt: serverTimestamp(),
+    });
+
+    // Add to local state
+    setBookings(prev => [
+      ...prev,
+      { id: docRef.id, type: 'flight', data: flightData, timestamp: new Date().toISOString() }
+    ]);
+
+    toast.success('Flight booking request submitted! Our team will contact you shortly.');
+
+    // Reset form
     setFlightData({
       tripType: 'roundtrip',
       from: '',
@@ -85,11 +105,29 @@ export function BookNowPage() {
       email: '',
       note: '',
     });
-  };
 
-  const handleVisaSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  } catch (error) {
+    console.error("Error submitting flight booking:", error);
+    toast.error('Failed to submit flight booking. Please try again.');
+  }
+};
+
+const handleVisaSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  try {
+    const docRef = await addDoc(collection(db, "visaApplications"), {
+      ...visaData,
+      createdAt: serverTimestamp(),
+    });
+
+    setBookings(prev => [
+      ...prev,
+      { id: docRef.id, type: 'visa', data: visaData, timestamp: new Date().toISOString() }
+    ]);
+
     toast.success('Visa application submitted! We will review your information and contact you within 24 hours.');
+
     setVisaData({
       country: '',
       visaType: '',
@@ -100,11 +138,29 @@ export function BookNowPage() {
       travelDate: '',
       note: '',
     });
-  };
 
-  const handleHotelSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  } catch (error) {
+    console.error("Error submitting visa application:", error);
+    toast.error('Failed to submit visa application. Please try again.');
+  }
+};
+
+// Similarly, for hotel and event bookings:
+const handleHotelSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    const docRef = await addDoc(collection(db, "hotelReservations"), {
+      ...hotelData,
+      createdAt: serverTimestamp(),
+    });
+
+    setBookings(prev => [
+      ...prev,
+      { id: docRef.id, type: 'hotel', data: hotelData, timestamp: new Date().toISOString() }
+    ]);
+
     toast.success('Hotel reservation request submitted! We\'ll send you the best options shortly.');
+
     setHotelData({
       destination: '',
       checkIn: '',
@@ -114,11 +170,28 @@ export function BookNowPage() {
       email: '',
       note: '',
     });
-  };
 
-  const handleEventSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  } catch (error) {
+    console.error("Error submitting hotel reservation:", error);
+    toast.error('Failed to submit hotel reservation. Please try again.');
+  }
+};
+
+const handleEventSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    const docRef = await addDoc(collection(db, "eventBookings"), {
+      ...eventData,
+      createdAt: serverTimestamp(),
+    });
+
+    setBookings(prev => [
+      ...prev,
+      { id: docRef.id, type: 'event', data: eventData, timestamp: new Date().toISOString() }
+    ]);
+
     toast.success('Event space booking request received! Our event specialists will contact you soon.');
+
     setEventData({
       eventType: '',
       location: '',
@@ -128,7 +201,13 @@ export function BookNowPage() {
       requirements: '',
       email: ''
     });
-  };
+
+  } catch (error) {
+    console.error("Error submitting event booking:", error);
+    toast.error('Failed to submit event booking. Please try again.');
+  }
+};
+
 
   return (
     <div className="pt-16">
@@ -319,7 +398,7 @@ export function BookNowPage() {
                       <Select
                         value={flightData.class}
                         onValueChange={(value) =>
-                          setFlightData({ ...flightData, class: value })
+                          setFlightData({ ...flightData, class: value as 'economy' | 'premium' | 'business' | 'first' })
                         }
                       >
                         <SelectTrigger id="class" className="bg-input-background">
