@@ -20,33 +20,25 @@ export function VisaApplicationPage({ onNavigate }: VisaApplicationPageProps) {
       name: 'Tourist Visa',
       icon: Globe,
       description: 'For leisure travel and sightseeing',
-      processing: '5-10 business days',
       validity: '6 months - 5 years',
-      price: 'From $99'
     },
     {
       name: 'Business Visa',
       icon: Users,
       description: 'For business meetings and conferences',
-      processing: '3-7 business days',
       validity: '1-10 years',
-      price: 'From $149'
     },
     {
       name: 'Student Visa',
       icon: FileText,
       description: 'For educational purposes',
-      processing: '2-4 weeks',
       validity: 'Duration of study',
-      price: 'From $199'
     },
     {
       name: 'Work Visa',
       icon: Shield,
       description: 'For employment opportunities',
-      processing: '2-6 weeks',
       validity: 'Contract duration',
-      price: 'From $249'
     }
   ];
 
@@ -214,17 +206,12 @@ useEffect(() => {
               <h3 className="text-xl mb-2 text-[var(--foreground)]">{visa.name}</h3>
               <p className="text-[var(--muted-foreground)] text-sm mb-4">{visa.description}</p>
               <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-[var(--muted-foreground)]">
-                  <Clock className="h-4 w-4" />
-                  <span>{visa.processing}</span>
-                </div>
+                
                 <div className="flex items-center gap-2 text-[var(--muted-foreground)]">
                   <CheckCircle className="h-4 w-4" />
                   <span>{visa.validity}</span>
                 </div>
-                <div className="pt-2 text-[var(--primary)] font-semibold">
-                  {visa.price}
-                </div>
+                
               </div>
             </CardContent>
           </Card>
