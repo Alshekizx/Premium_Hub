@@ -55,12 +55,14 @@ useEffect(() => {
               </div>
               <div>
                 <div className="text-xl font-semibold">Dêo Travel Agency</div>
+                <button onClick={() => handleNavClick('admin')} className="hover:text-white transition-colors ">
                 <div
                   className="text-xs"
                   style={{ color: 'var(--muted-foreground)' }}
                 >
                   Your travels, made simple
                 </div>
+                </button>
               </div>
             </div>
             <p
@@ -178,10 +180,13 @@ useEffect(() => {
           }}
         >
           <p>
-            &copy; 2025 Dêo Travel Agency. All rights reserved. | Privacy Policy | Terms of Service | {' '}
-            <button onClick={() => handleNavClick('admin')} className="hover:text-white transition-colors underline">
-              Admin
-            </button>
+            &copy; 2025 Dêo Travel Agency. All rights reserved. | {' '}
+            <button onClick={() => handleNavClick('contract')} className="hover:text-white transition-colors underline">
+              Privacy Policy
+            </button> | {' '}
+            <button onClick={() => handleNavClick('contract')} className="hover:text-white transition-colors underline">
+              Terms of Service
+            </button> 
           </p>
         </div>
       </div>

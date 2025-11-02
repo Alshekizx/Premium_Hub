@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 import { useEffect, useState } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../../../firebase';
+import { Testimonial } from './admin';
 
 
 interface Destination {
@@ -68,26 +69,31 @@ useEffect(() => {
     fetchFeatured();
   }, []);
 
-  const testimonials = [
-    {
-      name: 'Sarah Mitchell',
-      location: 'New York, USA',
-      text: 'Majik Travels made our visa application process so smooth! Their team was professional and got our visas approved quickly.',
-      initials: 'SM'
-    },
-    {
-      name: 'James Chen',
-      location: 'Singapore',
-      text: 'Booked our honeymoon through Majik Travels. The hotels were stunning and the entire trip was perfectly organized!',
-      initials: 'JC'
-    },
-    {
-      name: 'Aisha Patel',
-      location: 'London, UK',
-      text: 'Great service for corporate event bookings. They found us the perfect venue and handled all arrangements professionally.',
-      initials: 'AP'
-    }
-  ];
+  
+ const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+
+ useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        const q = query(
+          collection(db, "testimonials"),
+          where("approved", "==", true)
+        );
+        const querySnapshot = await getDocs(q);
+        const data = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Testimonial[];
+        setTestimonials(data);
+      } catch (error) {
+        console.error("Error fetching testimonials:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTestimonials();
+  }, []);
 
   return (
     <div>
@@ -291,25 +297,32 @@ useEffect(() => {
 
       {/* Testimonials */}
       <section className="py-20 bg-[var(--lighter-background)] text-[var(--foreground)] transition-colors duration-300">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl mb-4 text-[var(--primary)]">
-              What Our Clients Say
-            </h2>
-            <p className="text-[var(--muted-foreground)] max-w-2xl mx-auto">
-              Real experiences from our satisfied travelers
-            </p>
-          </div>
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl md:text-5xl mb-4 text-[var(--primary)]">
+            What Our Clients Say
+          </h2>
+          <p className="text-[var(--muted-foreground)] max-w-2xl mx-auto">
+            Real experiences from our satisfied travelers
+          </p>
+        </div>
 
+        {loading ? (
+          <p className="text-center text-[var(--muted-foreground)]">
+            Loading testimonials...
+          </p>
+        ) : testimonials.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {testimonials.map((testimonial, index) => (
-              <Card 
-                key={index} 
+            {testimonials.map((testimonial) => (
+              <Card
+                key={testimonial.id}
                 className="hover:shadow-lg transition-shadow bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)]"
               >
                 <CardContent className="p-6">
                   <Quote className="h-8 w-8 text-[var(--primary)] mb-4" />
-                  <p className="text-[var(--muted-foreground)] mb-6">{testimonial.text}</p>
+                  <p className="text-[var(--muted-foreground)] mb-6">
+                    {testimonial.text}
+                  </p>
                   <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarFallback className="bg-[var(--primary)] text-[var(--primary-foreground)]">
@@ -317,16 +330,25 @@ useEffect(() => {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-medium text-[var(--foreground)]">{testimonial.name}</div>
-                      <div className="text-sm text-[var(--muted-foreground)]">{testimonial.location}</div>
+                      <div className="font-medium text-[var(--foreground)]">
+                        {testimonial.name}
+                      </div>
+                      <div className="text-sm text-[var(--muted-foreground)]">
+                        {testimonial.location}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
-        </div>
-      </section>
+        ) : (
+          <p className="text-center text-[var(--muted-foreground)]">
+            No approved testimonials yet.
+          </p>
+        )}
+      </div>
+    </section>
 
 
       {/* CTA Section */}

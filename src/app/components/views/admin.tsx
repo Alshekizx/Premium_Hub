@@ -8,6 +8,7 @@ import { Textarea } from '../ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
+import QuillEditor from '../ui/quillEditor';
 import { 
   Building2, 
   Phone, 
@@ -30,12 +31,15 @@ import {
   Lock,
   Shield,
   Edit,
-  Quote
+  Quote,
+  Paperclip,
+  CheckCircle
 } from 'lucide-react';
+
 import { toast } from 'sonner';
 import React from 'react';
 import { db } from '../../../../firebase';
-import { doc, setDoc, deleteDoc,  getDocs, query, collection, orderBy } from "firebase/firestore";
+import { doc, setDoc, deleteDoc,  getDocs, query, collection, orderBy, getDoc, updateDoc } from "firebase/firestore";
 
 interface AdminDashboardPageProps {
   onNavigate: (page: string) => void;
@@ -152,27 +156,30 @@ export interface VisaDestination {
   successRate?: string;     // e.g. '92%'       // whether it’s marked as popular
 }
 
-interface Testimonial {
+export interface Testimonial {
   id: string;
   name: string;
   location: string;
   text: string;
   initials: string;
+  approved: boolean;
 }
 
 
-interface FAQ {
+
+export interface FAQ {
   id: string;
   question: string;
   answer: string;
 }
+
+
 
 export function AdminDashboardPage({ onNavigate }: AdminDashboardPageProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Company Info State
 // Company Info State
 const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
   phones: [''],
@@ -242,7 +249,6 @@ const [faqs, setFaqs] = useState<FAQ[]>([
 });
 
 
-  const [newFaq, setNewFaq] = useState({ question: '', answer: '' });
 
   // Load data from localStorage
 useEffect(() => {
@@ -706,50 +712,163 @@ useEffect(() => {
 
 
 
-const [testimonials, setTestimonials] = useState<Testimonial[]>(() => {
-  if (typeof window !== "undefined") {
-    const stored = localStorage.getItem("testimonials");
-    return stored ? JSON.parse(stored) : [];
-  }
-  return [];
-});
+ const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
 
 
 
 
+const fetchTestimonials = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "testimonials"));
+      const data: Testimonial[] = querySnapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      })) as Testimonial[];
+      setTestimonials(data);
+    } catch (error) {
+      console.error("Error fetching testimonials:", error);
+      toast.error("Failed to fetch testimonials");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    fetchTestimonials();
+  }, []);
 
-const deleteTestimonial = (id: string) => {
-  const updatedList = testimonials.filter(t => t.id !== id);
-  setTestimonials(updatedList);
-  localStorage.setItem("testimonials", JSON.stringify(updatedList));
-  toast.success("Testimonial deleted successfully!");
-};
+  // ✅ Delete testimonial
+  const deleteTestimonial = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "testimonials", id));
+      setTestimonials((prev) => prev.filter((t) => t.id !== id));
+      toast.success("Testimonial deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting testimonial:", error);
+      toast.error("Failed to delete testimonial");
+    }
+  };
 
+  // ✅ Approve testimonial
+  const approveTestimonial = async (id: string) => {
+    try {
+      const testimonialRef = doc(db, "testimonials", id);
+      await updateDoc(testimonialRef, { approved: true });
+      setTestimonials((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, approved: true } : t))
+      );
+      toast.success("Testimonial approved!");
+    } catch (error) {
+      console.error("Error approving testimonial:", error);
+      toast.error("Failed to approve testimonial");
+    }
+  };
 
+ const [newFaq, setNewFaq] = useState({ question: '', answer: '' });
+   const [loading, setLoading] = useState(false);
+   
 
-  const addFaq = () => {
+ // ✅ Fetch FAQs from Firestore on component mount
+  useEffect(() => {
+    const fetchFaqs = async () => {
+      setLoading(true);
+      try {
+        const q = query(collection(db, 'faqs'), orderBy('question', 'asc'));
+        const snapshot = await getDocs(q);
+        const list: FAQ[] = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as FAQ[];
+        setFaqs(list);
+      } catch (error) {
+        console.error('Error fetching FAQs:', error);
+        toast.error('Failed to load FAQs');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFaqs();
+  }, []);
+
+   // ✅ Add new FAQ to Firestore
+  const addFaq = async () => {
     if (!newFaq.question || !newFaq.answer) {
       toast.error('Please fill in all required fields');
       return;
     }
-    const faq: FAQ = {
-      id: Date.now().toString(),
-      ...newFaq
-    };
-    const updated = [...faqs, faq];
-    setFaqs(updated);
-    localStorage.setItem('faqs', JSON.stringify(updated));
-    setNewFaq({ question: '', answer: '' });
-    toast.success('FAQ added successfully!');
+
+    const id = Date.now().toString();
+    const faq: FAQ = { id, ...newFaq };
+
+    try {
+      await setDoc(doc(db, 'faqs', id), faq);
+      setFaqs(prev => [...prev, faq]);
+      setNewFaq({ question: '', answer: '' });
+      toast.success('FAQ added successfully!');
+    } catch (error) {
+      console.error('Error adding FAQ:', error);
+      toast.error('Failed to add FAQ');
+    }
   };
 
-  const deleteFaq = (id: string) => {
-    const updated = faqs.filter(f => f.id !== id);
-    setFaqs(updated);
-    localStorage.setItem('faqs', JSON.stringify(updated));
-    toast.success('FAQ deleted');
+  // ✅ Delete FAQ from Firestore
+  const deleteFaq = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'faqs', id));
+      setFaqs(prev => prev.filter(f => f.id !== id));
+      toast.success('FAQ deleted');
+    } catch (error) {
+      console.error('Error deleting FAQ:', error);
+      toast.error('Failed to delete FAQ');
+    }
   };
+
+   const [terms, setTerms] = useState('');
+  const [privacy, setPrivacy] = useState('');
+ // ✅ Fetch contracts from Firestore when component mounts
+  useEffect(() => {
+    const fetchContracts = async () => {
+      try {
+        const termsRef = doc(db, 'contracts', 'terms');
+        const privacyRef = doc(db, 'contracts', 'privacy');
+
+        const [termsSnap, privacySnap] = await Promise.all([
+          getDoc(termsRef),
+          getDoc(privacyRef),
+        ]);
+
+        if (termsSnap.exists()) {
+          setTerms(termsSnap.data().content || '');
+        }
+
+        if (privacySnap.exists()) {
+          setPrivacy(privacySnap.data().content || '');
+        }
+
+        toast.success('Contracts loaded successfully!');
+      } catch (error) {
+        console.error('Error fetching contracts:', error);
+        toast.error('Failed to load contracts');
+      }
+    };
+
+    fetchContracts();
+  }, []);
+
+  const saveContracts = async () => {
+    try {
+      await setDoc(doc(db, 'contracts', 'terms'), { content: terms });
+      await setDoc(doc(db, 'contracts', 'privacy'), { content: privacy });
+      toast.success('Contracts saved successfully!');
+    } catch (error) {
+      console.error('Error saving contracts:', error);
+      toast.error('Failed to save contracts');
+    }
+  };
+
+  // React Quill toolbar options
+ 
 
   // Login Screen
   if (!isLoggedIn) {
@@ -840,7 +959,7 @@ const deleteTestimonial = (id: string) => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-4 lg:grid-cols-7 gap-2 h-auto p-1 bg-white shadow-sm mb-8">
+          <TabsList className="grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-1 bg-white shadow-sm mb-8">
             <TabsTrigger value="overview" className="flex items-center gap-2 py-3">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -868,6 +987,11 @@ const deleteTestimonial = (id: string) => {
             <TabsTrigger value="testimonials" className="flex items-center gap-2 py-3">
               <Quote className="h-4 w-4" />
               <span className="hidden sm:inline">Testimonials</span>
+            </TabsTrigger>
+
+            <TabsTrigger value="contracts" className="flex items-center gap-2 py-3">
+              <Paperclip className="h-4 w-4" />
+              <span className="hidden sm:inline">Contracts</span>
             </TabsTrigger>
           </TabsList>
 
@@ -1975,7 +2099,7 @@ const deleteTestimonial = (id: string) => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Plus className="h-5 w-5" />
-                    Add New FAQ
+                    Add Visa New FAQ
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -2044,52 +2168,109 @@ const deleteTestimonial = (id: string) => {
           {/* Testimonials Tab */}
           <TabsContent value="testimonials">
             <Card>
-              <CardHeader>
-                <CardTitle>Client Testimonials</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Rating</TableHead>
-                      <TableHead>Feedback</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {testimonials.length > 0 ? (
-                      testimonials.map((t) => (
-                        <TableRow key={t.id}>
-                          <TableCell>{t.name}</TableCell>
-                          <TableCell>{t.location}</TableCell>
-                          <TableCell className="max-w-xs truncate">{t.text}</TableCell>
-                          <TableCell className="flex items-center gap-2">
-                           
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              title="Delete"
-                              onClick={() => deleteTestimonial(t.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
-                          No testimonials found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+      <CardHeader>
+        <CardTitle>Client Testimonials</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <p className="text-center text-gray-500">Loading testimonials...</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Feedback</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {testimonials.length > 0 ? (
+                testimonials.map((t) => (
+                  <TableRow key={t.id}>
+                    <TableCell>{t.name}</TableCell>
+                    <TableCell>{t.location}</TableCell>
+                    <TableCell className="max-w-xs truncate">
+                      {t.text}
+                    </TableCell>
+                    <TableCell>
+                      {t.approved ? (
+                        <span className="text-green-600 font-medium">Approved</span>
+                      ) : (
+                        <span className="text-yellow-600 font-medium">Pending</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="flex gap-2">
+                      {!t.approved && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => approveTestimonial(t.id)}
+                          title="Approve"
+                        >
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteTestimonial(t.id)}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                    No testimonials found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
           </TabsContent>
+
+          {/* contracts Tab */}
+<TabsContent value="contracts">
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Manage Contracts
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent>
+            <Tabs defaultValue="termsOfService">
+              <TabsList className="grid grid-cols-2 mb-6">
+                <TabsTrigger value="termsOfService">Terms of Service</TabsTrigger>
+                <TabsTrigger value="privacyPolicy">Privacy Policy</TabsTrigger>
+              </TabsList>
+
+<TabsContent value="termsOfService">
+  <QuillEditor value={terms} onChange={setTerms} />
+</TabsContent>
+
+<TabsContent value="privacyPolicy">
+  <QuillEditor value={privacy} onChange={setPrivacy} />
+</TabsContent>
+            </Tabs>
+
+            <div className="flex justify-end mt-6">
+              <Button onClick={saveContracts}>Save All</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </TabsContent>
 
         </Tabs>
       </div>

@@ -8,7 +8,7 @@ import { FileText, Clock, CheckCircle, Globe, Shield, Users } from 'lucide-react
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from '../../../../firebase';
-import { VisaDestination } from './admin';
+import { FAQ, VisaDestination } from './admin';
 
 interface VisaApplicationPageProps {
   onNavigate: (page: string) => void;
@@ -43,6 +43,7 @@ export function VisaApplicationPage({ onNavigate }: VisaApplicationPageProps) {
   ];
 
  const [popularDestinations, setPopularDestinations] = useState<VisaDestination[]>([]);
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [, setLoading] = useState(true);
  // Fetch destinations from Firestore
 useEffect(() => {
@@ -65,7 +66,23 @@ useEffect(() => {
   fetchDestinations();
 }, []);
 
+// ✅ Fetch FAQs from Firestore
+  useEffect(() => {
+    const fetchFaqs = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "faqs"));
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as FAQ[];
+        setFaqs(data);
+      } catch (error) {
+        console.error("Error fetching FAQs:", error);
+      }
+    };
 
+    fetchFaqs();
+  }, []);
 
   const applicationProcess = [
     {
@@ -100,32 +117,7 @@ useEffect(() => {
     }
   ];
 
-  const faqs = [
-    {
-      question: 'How long does the visa application process take?',
-      answer: 'Processing times vary by country and visa type, typically ranging from 3 days to 6 weeks. We always recommend applying well in advance of your travel dates. Express processing is available for select countries at an additional fee.'
-    },
-    {
-      question: 'What documents do I need for a visa application?',
-      answer: 'Common documents include a valid passport, photographs, financial statements, travel itinerary, and purpose of visit documentation. Specific requirements vary by country and visa type. We provide a comprehensive checklist tailored to your application.'
-    },
-    {
-      question: 'What is your visa approval success rate?',
-      answer: 'We maintain an average approval rate of 92% across all visa categories. Our experienced team carefully reviews each application to ensure all requirements are met before submission, maximizing your chances of approval.'
-    },
-    {
-      question: 'Can you help if my visa application is rejected?',
-      answer: 'Yes! We offer reapplication assistance and will help identify the reasons for rejection. Our team will work with you to strengthen your application and improve the chances of approval on the next attempt.'
-    },
-    {
-      question: 'Do you offer expedited visa processing?',
-      answer: 'Yes, we offer express processing services for select countries at an additional fee. This can reduce processing time by 50-70% depending on the destination. Contact us to check if expedited processing is available for your visa type.'
-    },
-    {
-      question: 'What happens after I submit my application?',
-      answer: 'After submission, you\'ll receive a confirmation and tracking number. We monitor your application status and provide regular updates. You can also track your application online through our portal. Once approved, we\'ll notify you immediately and arrange for document collection.'
-    }
-  ];
+
 
   return (
     <div className="pt-16">
