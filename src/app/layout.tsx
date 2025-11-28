@@ -1,22 +1,27 @@
-//file:app/layout.tsx
+// app/layout.tsx
+
+import "./styles/globals.css";
+import "./index.css";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./styles/globals.css";
-import AppLayout from "./appLayout";
-
+import Navigation from "./components/Navigation";
+import Footer from "./components/Footer";
+// Load fonts
 const geistSans = Geist({
-  variable: "--font-geist-sans",
   subsets: ["latin"],
+  variable: "--font-geist-sans",
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
   subsets: ["latin"],
+  variable: "--font-geist-mono",
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "17K Travel Agency",
-  description: "Book flights, hotels, and visas with ease.",
+  title: "Premium Hub",
+  description: "Premium Vehicles and Homes  ",
 };
 
 export default function RootLayout({
@@ -26,8 +31,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}>
-        <AppLayout>{children}</AppLayout>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
+      >
+        <Navigation/>
+        <div className="min-h-screen">
+        {children}
+        </div>
+        <Footer/>
       </body>
     </html>
   );
