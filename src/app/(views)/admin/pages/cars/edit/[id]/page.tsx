@@ -265,10 +265,10 @@ export default function EditCar() {
               <div className="space-y-2">
                 <Label htmlFor="transmission">Transmission *</Label>
                 <Select
-                  value={car.transmission}
-                  onValueChange={(value: 'automatic' | 'manual') =>
-                    setCar({ ...car, transmission: value })
-                  }>
+                value={car.transmission}
+                onValueChange={(value: 'automatic' | 'manual') =>
+                  setCar({ ...car, transmission: value })
+                }>
                   <SelectTrigger id="transmission">
                     <SelectValue />
                   </SelectTrigger>
