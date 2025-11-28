@@ -1,6 +1,6 @@
 // app/layout.tsx
 
-import "./styles/globals.css";
+import "./globals.css";
 import "./index.css";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
