@@ -133,14 +133,10 @@ const contactInfo = companyDetails
       {
         icon: Clock,
         title: 'Office Hours',
-        details: companyDetails.workingHours
-          ? Object.entries(companyDetails.workingHours).map(
-              ([day, hours]) =>
-                `${day}: ${hours.closed ? 'Closed' : `${hours.open} - ${hours.close}`}`
-            )
-          : [],
+        details: ['Mon - Sat: 9:00 AM - 6:00 PM'],
         link: null,
-      },
+      }
+
     ]
   : [];
 
