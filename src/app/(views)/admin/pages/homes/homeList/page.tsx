@@ -55,16 +55,34 @@ const homesData: Home[] = snapshot.docs.map(doc => {
     fetchHomes();
   }, []);
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'homes', id));
-      setHomes(homes.filter(home => home.id !== id));
-      toast.success('Home deleted successfully!');
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to delete home.');
-    }
-  };
+const handleDelete = async (id: string) => {
+  const confirmDelete = confirm("Are you sure you want to delete this home?");
+  if (!confirmDelete) return;
+
+  try {
+    // Optimistic UI update (remove first)
+    setHomes(prev => prev.filter(home => home.id !== id));
+
+    // Delete from Firestore
+    await deleteDoc(doc(db, "homes", id));
+
+    toast.success("Home deleted successfully!");
+  } catch (err) {
+    console.error(err);
+
+    toast.error("Failed to delete home. Restoring...");
+
+    // Rollback if delete fails
+    const snapshot = await getDocs(collection(db, "homes"));
+    const homesData: Home[] = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...(doc.data() as Omit<Home, "id">),
+    }));
+
+    setHomes(homesData);
+  }
+};
+
 
   const filteredHomes = homes.filter(
     (home) =>
