@@ -118,8 +118,8 @@ const contactInfo = companyDetails
       {
         icon: Mail,
         title: 'Email Us',
-        details: [companyDetails.primaryEmail, 'We reply within 24 hours'],
-        link: `mailto:${companyDetails.primaryEmail}`,
+        details: [companyDetails.secondaryEmail, 'We reply within 24 hours'],
+        link: `mailto:${companyDetails.secondaryEmail}`,
       },
       {
         icon: MapPin,
