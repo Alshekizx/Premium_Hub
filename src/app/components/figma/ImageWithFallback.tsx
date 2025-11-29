@@ -20,19 +20,38 @@ export function ImageWithFallback({
     setDidError(true);
   };
 
+  if (didError || !src) {
+    return (
+      <div
+        className={`inline-block bg-gray-100 text-center align-middle ${className ?? ""}`}
+        style={{ position: "relative", width, height, ...style }}
+      >
+        <Image
+          src={ERROR_IMG_SRC}
+          alt="Error loading image"
+          fill
+          style={{ objectFit: "contain" }}
+          {...rest}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={`relative bg-gray-100 ${className ?? ""}`}
-      style={{ width: width || "100%", height: height || "100%", ...style }}
-    >
-      <Image
-        src={didError || !src ? ERROR_IMG_SRC : src}
-        alt={alt || "image"}
-        fill
-        style={{ objectFit: didError || !src ? "contain" : "cover" }}
-        onError={handleError}
-        {...rest}
-      />
-    </div>
-  );
+  <div
+    className={`relative ${className ?? ""}`}
+    style={{ width: width || "100%", height: height || "100%", ...style }}
+  >
+    <Image
+      src={src}
+      alt={alt || "image"}
+      fill={!width || !height}
+      width={width}
+      height={height}
+      style={{ objectFit: "cover" }}
+      onError={handleError}
+      {...rest}
+    />
+  </div>
+);
 }
