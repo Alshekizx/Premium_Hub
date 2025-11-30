@@ -151,9 +151,9 @@ export default function CarsPage() {
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
               >
                 <option value="all">All Prices</option>
-                <option value="under100k">Under $100K</option>
-                <option value="100k-150k">$100K - $150K</option>
-                <option value="over150k">Over $150K</option>
+                <option value="under100k">Under ₦100K</option>
+                <option value="100k-150k">₦100K - ₦150K</option>
+                <option value="over150k">Over ₦150K</option>
               </select>
             </div>
 
@@ -250,12 +250,12 @@ export default function CarsPage() {
                           {car.type === 'rent' && (
                             <div className="flex items-center gap-1 text-blue-600">
                               <Calendar className="w-5 h-5" />
-                              <span className="text-2xl">${car.rentalPrice}/day</span>
+                              <span className="text-2xl">₦{car.rentalPrice}/day</span>
                             </div>
                           )}
                           {car.type === 'both' && (
                             <div className="text-sm text-gray-600 mt-1">
-                              or ${car.rentalPrice}/day
+                              or ₦{car.rentalPrice}/day
                             </div>
                           )}
                         </div>
