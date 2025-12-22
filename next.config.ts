@@ -1,9 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
- experimental: {
-    reactCompiler: true,
-  },
+  reactCompiler: true, // <-- move it here
   images: {
     remotePatterns: [
       {
@@ -11,9 +9,10 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com",
       },
       { 
-        protocol: "https", hostname: 
-        "firebasestorage.googleapis.com", 
-        pathname: "/v0/b/**" },
+        protocol: "https", 
+        hostname: "firebasestorage.googleapis.com", 
+        pathname: "/v0/b/**" 
+      },
       {
         protocol: "https",
         hostname: "cdn.pixabay.com",
