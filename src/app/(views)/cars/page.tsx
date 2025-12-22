@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Filter, Bus, Calendar, DollarSign, Fuel, Users, Settings } from 'lucide-react';
+import { Search, Filter, Bus, Calendar, Fuel, Users, Settings } from 'lucide-react';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback'; 
 import { db } from '../../../../firebase'; 
 import { collection, getDocs } from 'firebase/firestore';
@@ -243,8 +243,8 @@ export default function CarsPage() {
                         <div>
                           {(car.type === 'sale' || car.type === 'both') && (
                             <div className="flex items-center gap-1 text-blue-600">
-                              <DollarSign className="w-5 h-5" />
-                              <span className="text-2xl">{car.price.toLocaleString()}</span>
+                             
+                              <span className="text-2xl">₦{car.price.toLocaleString()}</span>
                             </div>
                           )}
                           {car.type === 'rent' && (
