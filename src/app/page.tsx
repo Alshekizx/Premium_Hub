@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Car, Home, ArrowRight, Star, Shield, Award, Users } from 'lucide-react';
-import { ImageWithFallback } from './components/figma/ImageWithFallback';
+import ImageWithAlternate from './components/figma/ImageWithFallback';
+
 
 export default function HomePage() {
   const stats = [
@@ -33,11 +34,16 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative h-[600px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-gray-900/95 via-gray-900/80 to-gray-900/95 z-10" />
-        <ImageWithFallback
-          src="https://cdn.pixabay.com/photo/2024/05/02/04/21/ai-generated-8733541_640.jpg"
-          alt="Hero Background"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <ImageWithAlternate
+            srcList={[
+              "https://cdn.pixabay.com/photo/2023/05/03/14/47/bmw-7967852_640.jpg",
+              "https://cdn.pixabay.com/photo/2017/07/09/03/19/home-2486092_640.jpg",
+            ]}
+            alt="Hero Background"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+
+
         
         <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl md:text-6xl lg:text-7xl text-white mb-6 tracking-tight">
