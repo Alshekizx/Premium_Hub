@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Car } from "@/app/data/cars";
 import { db } from "../../../../../../../firebase"; 
 import { addDoc, collection } from "firebase/firestore";
+import { serverTimestamp } from "firebase/firestore";
 
 
 export default function UploadCar() {
@@ -32,6 +33,7 @@ export default function UploadCar() {
     images: [],
     image: "",
     interestedUsers: [], // optional
+   
   });
 
   const [featureInput, setFeatureInput] = useState("");

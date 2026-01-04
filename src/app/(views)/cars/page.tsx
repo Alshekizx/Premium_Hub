@@ -1,4 +1,4 @@
-//file ../cars/page.tsx
+
 //file ../cars/page.tsx
 "use client";
 
@@ -7,7 +7,12 @@ import Link from 'next/link';
 import { Search, Filter, Bus, Calendar, Fuel, Users, Settings } from 'lucide-react';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback'; 
 import { db } from '../../../../firebase'; 
-import { collection, getDocs } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  query,
+  orderBy,
+} from "firebase/firestore";
 import { Car } from '@/app/data/cars';
 export default function CarsPage() {
   const [cars, setCars] = useState<Car[]>([]);
@@ -20,18 +25,22 @@ export default function CarsPage() {
 
   
   // Fetch cars from Firestore
-  useEffect(() => {
+   useEffect(() => {
     const fetchCars = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "cars"));
-        const fetchedCars: Car[] = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data() as Partial<Car>;
+        const q = query(
+          collection(db, "cars"),
+          orderBy("createdAt", "desc")
+        );
 
+        const querySnapshot = await getDocs(q);
+        const fetchedCars: Car[] = [];
+
+       querySnapshot.forEach((doc) => {
           fetchedCars.push({
-            id: doc.id,
-            ...data,
-          } as Car);
+            ...(doc.data() as Car),
+            id: doc.id, // id LAST so it always wins
+          });
         });
 
         setCars(fetchedCars);
